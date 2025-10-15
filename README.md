@@ -16,14 +16,14 @@ Ideal for sprint planning, backlog grooming, or retrospectives.
 
 sprint-analyzer/
 │
-├── sprint_analyzer.py # Main script
-├── requirements.txt # Python dependencies
-├── .env # Stores your GROQ API key
+├── sprint_analyzer.py        # Main script
+├── requirements.txt          # Python dependencies
+├── .env                      # Stores your GROQ API key
 ├── .gitignore
 ├── README.md
 │
 └── model/
-└── data/ # AI-generated analysis results (auto-created)
+    └── data/                 # AI-generated analysis results (auto-created)
 
 
 Each time you run the analyzer, a new date-based folder with a random ID is created inside `model/data/` to store results like:
