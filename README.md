@@ -53,7 +53,7 @@ model/data/2025-10-10_ab12c/
 
 pip install -r requirements.txt
 
-echo GROQ_API_KEY=your_groq_api_key_here > .env
+cp .env.example .env
 
 python sprint_analyzer.py
 
