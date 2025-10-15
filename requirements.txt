@@ -1,0 +1,4 @@
+groq
+jira
+python-dotenv
+rich
