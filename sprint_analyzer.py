@@ -18,19 +18,60 @@ jira = JIRA(
 )
 
 # --- Query: Current Sprint for You ---
-jql = "sprint in openSprints() AND assignee = currentUser()"
+jql = "sprint in openSprints() AND assignee = currentUser() AND status in ('Open', 'Reopened')"
 issues = jira.search_issues(jql, maxResults=100)
 
 console.print(f"\n[bold green]Found {len(issues)} tickets in current sprint[/bold green]\n")
 
-# --- Analyze ---
+# --- Helper to get field ID by name ---
+def get_field_id_by_name(jira, name):
+    for f in jira.fields():
+        if f['name'].lower() == name.lower():
+            return f['id']
+    return None
+
+# --- Mapping numeric scores to words ---
+impact_map = {
+    range(1, 4): "Low impact: isolated",
+    range(4, 7): "Moderate impact: some users/features",
+    range(7, 9): "High impact: major disruption",
+    range(9, 11): "Critical impact: widespread or severe"
+}
+
+severity_map = {
+    range(1, 4): "Minor disruption: low impact",
+    range(4, 7): "Moderate disruption: partial loss or noticeable impact",
+    range(7, 9): "Major disruption: critical feature blocked",
+    range(9, 11): "Critical disruption: system-wide failure or blocker"
+}
+
+dev_lift_map = {
+    range(1, 4): "Very heavy lift: >3 days",
+    range(4, 7): "Heavy lift: 1–2 days",
+    range(7, 9): "Moderate lift: 3–8 hours",
+    range(9, 11): "Light lift: 1–3 hours"
+}
+
+def map_score(score, mapping):
+    if score is None:
+        return "-"
+    try:
+        score = int(score)  # ensure score is an integer
+    except ValueError:
+        return "-"
+    for r, desc in mapping.items():
+        if score in r:
+            return desc
+    return str(score)
+
+# --- Collect summary data from Jira issues ---
 summary_data = []
 for issue in issues:
     fields = issue.fields
     desc = fields.description or ""
     risk = 0
 
-    # Basic heuristics
+    # Basic heuristics to calculate risk
     if not fields.summary or len(desc) < 50:
         risk += 1
     if hasattr(fields, 'issuelinks') and len(fields.issuelinks) > 0:
@@ -38,10 +79,16 @@ for issue in issues:
     if "refactor" in fields.summary.lower() or "migrate" in fields.summary.lower():
         risk += 1
 
+    impact_field = get_field_id_by_name(jira, "Impact Score")
+    severity_field = get_field_id_by_name(jira, "Severity Score")
+    devlift_field = get_field_id_by_name(jira, "Dev Lift Score")
+
     summary_data.append({
         "key": issue.key,
         "summary": fields.summary,
-        "points": getattr(fields, "customfield_10016", None),  # story points field (may vary)
+        "impact_score": getattr(fields, impact_field, None),
+        "severity_score": getattr(fields, severity_field, None),
+        "dev_lift_score": getattr(fields, devlift_field, None),
         "risk": risk,
         "type": fields.issuetype.name,
     })
@@ -50,15 +97,23 @@ for issue in issues:
 table = Table(title="Sprint Ticket Overview")
 table.add_column("Key", style="cyan")
 table.add_column("Summary", style="white")
-table.add_column("Points", justify="right")
+table.add_column("Impact", justify="left")
+table.add_column("Severity", justify="left")
+table.add_column("Dev Effort", justify="left")
 table.add_column("Type", style="magenta")
 table.add_column("Risk", style="red")
 
 for item in summary_data:
+    impact_text = map_score(item["impact_score"], impact_map)
+    severity_text = map_score(item["severity_score"], severity_map)
+    dev_lift_text = map_score(item["dev_lift_score"], dev_lift_map)
+
     table.add_row(
         item["key"],
-        item["summary"][:60],
-        str(item["points"] or "-"),
+        item["summary"][:60] + ("..." if len(item["summary"]) > 60 else ""),
+        impact_text,
+        severity_text,
+        dev_lift_text,
         item["type"],
         "⚠️" * item["risk"] if item["risk"] else "✅"
     )
