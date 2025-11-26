@@ -70,6 +70,15 @@ for issue in issues:
     fields = issue.fields
     desc = fields.description or ""
     risk = 0
+    tt = getattr(fields, "timetracking", None)
+
+    if tt:
+        original_estimate = getattr(tt, "originalEstimate", None)
+        remaining_estimate = getattr(tt, "remainingEstimate", None)
+        # time_spent = getattr(tt, "timeSpent", None)
+    else:
+        original_estimate = None
+        remaining_estimate = None
 
     # Basic heuristics to calculate risk
     if not fields.summary or len(desc) < 50:
@@ -82,17 +91,30 @@ for issue in issues:
     impact_field = get_field_id_by_name(jira, "Impact Score")
     severity_field = get_field_id_by_name(jira, "Severity Score")
     devlift_field = get_field_id_by_name(jira, "Dev Lift Score")
-
+    priorityscore_field = get_field_id_by_name(jira, "Priority Score")
+    impactpriorityaccount_field = get_field_id_by_name(jira, "Impact Priority Account?")
+    priority_score = getattr(fields, priorityscore_field, None)
+    impact_priority_account = getattr(fields, impactpriorityaccount_field, None)
+    # If it's a list of CustomFieldOption objects
+    if isinstance(impact_priority_account, list) and len(impact_priority_account) > 0:
+        impact_priority_account = impact_priority_account[0].value  # 'Yes'
+    else:
+        impact_priority_account = None
+    
     summary_data.append({
         "key": issue.key,
         "summary": fields.summary,
+        "original_estimate": original_estimate,
+        "remaining_estimate": remaining_estimate,
         "impact_score": getattr(fields, impact_field, None),
         "severity_score": getattr(fields, severity_field, None),
         "dev_lift_score": getattr(fields, devlift_field, None),
+        "priority_score": priority_score,
+        "impact_priority_account": impact_priority_account,
         "risk": risk,
         "type": fields.issuetype.name,
     })
-
+print(summary_data)
 # --- Display Table ---
 table = Table(title="Sprint Ticket Overview")
 table.add_column("Key", style="cyan")
@@ -100,6 +122,10 @@ table.add_column("Summary", style="white")
 table.add_column("Impact", justify="left")
 table.add_column("Severity", justify="left")
 table.add_column("Dev Effort", justify="left")
+table.add_column("Priority Score", justify="left")
+table.add_column("Impact Priority Account?", justify="left")
+table.add_column("Original Estimate", justify="left")
+table.add_column("Remaining Estimate", justify="left")
 table.add_column("Type", style="magenta")
 table.add_column("Risk", style="red")
 
@@ -107,19 +133,23 @@ for item in summary_data:
     impact_text = map_score(item["impact_score"], impact_map)
     severity_text = map_score(item["severity_score"], severity_map)
     dev_lift_text = map_score(item["dev_lift_score"], dev_lift_map)
-
+    priority_score = item["priority_score"]
+    impact_priority_account = item["impact_priority_account"]
     table.add_row(
         item["key"],
         item["summary"][:60] + ("..." if len(item["summary"]) > 60 else ""),
         impact_text,
         severity_text,
         dev_lift_text,
+        priority_score,
+        impact_priority_account,
+        original_estimate,
+        remaining_estimate,
         item["type"],
         "⚠️" * item["risk"] if item["risk"] else "✅"
     )
 
 console.print(table)
-
 # --- Optional: GPT Summary ---
 # Initialize Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -129,7 +159,7 @@ summary_text = "\n".join(
 
 # Ask Groq (Llama 3) for sprint insights
 prompt = f"""
-Analyze the following sprint backlog items and identify:
+Analyze the following current sprint items and identify:
 1. High-risk or ambiguous stories.
 2. Possible dependencies.
 
