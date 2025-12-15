@@ -114,7 +114,7 @@ for issue in issues:
         "risk": risk,
         "type": fields.issuetype.name,
     })
-print(summary_data)
+
 # --- Display Table ---
 table = Table(title="Sprint Ticket Overview")
 table.add_column("Key", style="cyan")
@@ -133,8 +133,9 @@ for item in summary_data:
     impact_text = map_score(item["impact_score"], impact_map)
     severity_text = map_score(item["severity_score"], severity_map)
     dev_lift_text = map_score(item["dev_lift_score"], dev_lift_map)
-    priority_score = item["priority_score"]
-    impact_priority_account = item["impact_priority_account"]
+    priority_score = str(item["priority_score"])
+    impact_priority_account = str(item["impact_priority_account"])
+
     table.add_row(
         item["key"],
         item["summary"][:60] + ("..." if len(item["summary"]) > 60 else ""),
@@ -150,6 +151,7 @@ for item in summary_data:
     )
 
 console.print(table)
+exit()
 # --- Optional: GPT Summary ---
 # Initialize Groq client
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -159,12 +161,62 @@ summary_text = "\n".join(
 
 # Ask Groq (Llama 3) for sprint insights
 prompt = f"""
-Analyze the following current sprint items and identify:
-1. High-risk or ambiguous stories.
-2. Possible dependencies.
+You are an expert Sprint Analyst and Engineering Manager. Using the list of sprint items below,
+create a deep analysis and a 10-day execution plan for me.
 
-Items:
+DATA (list of issue objects):
 {summary_data}
+
+Your tasks:
+
+1. **Risk Analysis**
+   - Identify high-risk, ambiguous, or incomplete stories.
+   - Use fields: impact_score, severity_score, priority_score, dev_lift_score, impact_priority_account, and risk.
+   - Highlight items with no estimates or unclear acceptance criteria.
+
+2. **Dependency Detection**
+   - Identify potential blockers.
+   - Point out tasks requiring QA sequencing, environment dependencies, backend–frontend coordination, or cross-team work.
+
+3. **Effort Breakdown**
+   - Convert estimates (‘1h’, ‘2h’, ‘1d’) into hours.
+   - Calculate total sprint hours.
+   - Identify overloaded or underloaded sections.
+
+4. **Priority Reordering**
+   - Rank tasks for execution using:
+       - risk
+       - remaining_estimate
+       - priority_score
+       - dev_lift_score
+       - type (Bug, Task, P0)
+       - impact_priority_account (“Yes” = business-critical)
+   - Give me a final “Recommended Execution Order”.
+
+5. **10-Day Personal Execution Plan**
+   - Spread the work across 10 days.
+   - Max 6–7 productive hours/day.
+   - Group work logically (e.g., similar module, same system area, same repo).
+   - Call out where to pair with QA, Product, or Testing.
+
+6. **Identify Quick Wins**
+   - Highlight items < 2 hours that can fit between larger tasks.
+
+7. **Sprint Health Summary**
+   - Team focus areas
+   - Possible slip points
+   - Items that need clarification before work starts
+
+Return the result in sections:
+- High-Risk Items
+- Dependencies & Blockers
+- Estimate & Capacity Analysis
+- Recommended Execution Order
+- 10-Day Plan (Day 1 → Day 10)
+- Quick Wins
+- Sprint Summary
+
+Be concise but provide actionable insights.
 """
 # === Choose your model ===
 MODEL_NAME = "llama-3.1-8b-instant"  # or "llama-3.1-8b-instant"
