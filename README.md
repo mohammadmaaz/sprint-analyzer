@@ -1,134 +1,179 @@
 # 🧠 Sprint Analyzer  
-> AI-powered sprint analysis assistant for teams using JIRA or Agile boards.
+> AI-powered Sprint Analysis Agent for Agile Teams using JIRA or Manual Input
 
 ---
 
 ## 🚀 Overview
 
-Sprint Analyzer helps developers and project managers quickly **understand, assess, and prioritize sprint tickets** before starting work.  
-It summarizes risk levels, ticket complexity, and dependencies using an AI model (powered by **Groq** and **Llama 3.1**).
+**Sprint Analyzer** is an AI-powered assistant that helps developers, QA, and project managers quickly **understand, assess, and prioritize sprint tickets**.  
+
+It calculates **risk, complexity, dependencies**, and generates a **10-day execution plan** using an AI model (powered by **Groq** and **Llama 3.1**).  
 
 Ideal for sprint planning, backlog grooming, or retrospectives.
 
 ---
 
-## 📁 Project Structure
+## 🗂 Project Structure
 
 sprint-analyzer/
 │
-├── sprint_analyzer.py        # Main script
-├── requirements.txt          # Python dependencies
-├── .env                      # Stores your GROQ API key
-├── .gitignore
+├── agent.py # Orchestrator: runs the agent loop
+├── fetcher.py # JIRA fetcher and API integration
+├── memory.py # Memory, ticket scoring, risk calculation
+├── thinker.py # AI reasoning via Groq LLM
+├── actor.py # Console display & result saving
+├── utils.py # Helper functions (score mapping, formatting)
+├── requirements.txt # Python dependencies
+├── .env # Stores GROQ API key & JIRA credentials
 ├── README.md
-│
 └── model/
-    └── data/                 # AI-generated analysis results (auto-created)
+└── data/ # AI-generated analysis results (auto-created per run)
 
+vbnet
+Copy code
 
-Each time you run the analyzer, a new date-based folder with a random ID is created inside `model/data/` to store results like:
+Each run generates a **date-based folder** with a random ID to save results:
 
-model/data/2025-10-10_ab12c/
+model/data/2025-12-29_ab12c/
 └── sprint_analysis.txt
 
+yaml
+Copy code
 
 ---
 
 ## ⚙️ Installation Guide
 
-### 🪟 Windows 11 Setup
+### 🪟 Windows Setup
 
-1. **Install Python (from Microsoft Store)**  
-   - Open *Microsoft Store* → Search **Python 3.13+** → Click **Install**.  
-   - Verify installation:  
-     ```bash
-     python --version
-     ```
-
-2. **Clone the repository**
+1. **Install Python 3.13+**  
    ```bash
-   git clone https://github.com/<your-org>/sprint-analyzer.git
-   cd sprint-analyzer
+   python --version
+(Install via Microsoft Store or python.org)
 
+Clone the repository
 
+bash
+Copy code
+git clone https://github.com/<your-org>/sprint-analyzer.git
+cd sprint-analyzer
+Install dependencies
+
+bash
+Copy code
 pip install -r requirements.txt
+Configure environment
 
+bash
+Copy code
 cp .env.example .env
+Set your:
 
-python sprint_analyzer.py
+GROQ_API_KEY
 
+JIRA_URL, JIRA_EMAIL, JIRA_API_TOKEN (optional if using JIRA integration)
 
+Run the analyzer
+
+bash
+Copy code
+python agent.py
 🧩 Requirements
-
 Python 3.10+
+
 Internet connection
-Groq API key(free tier available)
+
+Groq API key (free tier available)
+
+Optional: JIRA access for automatic sprint fetch
 
 🧠 What It Does
+Fetch Tickets
 
-The analyzer:
+Manual input or via JIRA API
 
-Reads your sprint summary or ticket list (can be manually added or automated from JIRA).
+Supports current sprint, assignee, and status filters
 
-Sends it to an AI model (llama-3.1-70b-versatile) via Groq.
+Memory & Risk Scoring
 
-Evaluates:
+Calculates risk based on:
 
-Risk level (⚠️ = risky, ✅ = safe)
+Description length
 
-Estimated complexity / points
+Linked issues
 
-Type (Bug, Story, Epic, etc.)
+Keywords (refactor, migrate)
 
-Outputs a rich console summary and a saved .txt result file.
+Maps numeric scores to human-readable text (Impact, Severity, Dev Lift)
 
-🧾 Example Output
+Think (AI Reasoning)
 
-🖥️ Console View
+Sends ticket data + metrics to Groq LLM (Llama 3.1)
 
+Generates:
+
+Risk Analysis
+
+Dependency Detection
+
+Effort Breakdown
+
+Priority Reordering
+
+10-Day Execution Plan
+
+Quick Wins
+
+Sprint Health Summary
+
+Act (Output)
+
+Displays a rich console table with all tickets
+
+Saves AI analysis + raw data to model/data/<date_random>/sprint_analysis.txt
+
+🖥️ Example Console Output
+pgsql
+Copy code
 ┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┓
 ┃ Key           ┃ Summary                              ┃ Points ┃ Type   ┃ Risk    ┃
 ┣━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━╋━━━━━━━━╋━━━━━━━━━┫
 ┃ SK12-145      ┃ Refactor user service auth layer     ┃ 8      ┃ Story  ┃ ⚠️⚠️     ┃
 ┃ SK12-148      ┃ Fix dashboard widget error           ┃ 3      ┃ Bug    ┃ ✅      ┃
 ┗━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━┻━━━━━━━━┻━━━━━━━━━┛
-
 🧰 Tech Stack
-
 Python 3.13+
 
-Groq API (Llama 3.1) for AI analysis
+Groq API (Llama 3.1)
 
-Rich for console formatting
+Rich for terminal formatting
 
+JIRA Python API (optional for live sprint data)
 
 🧭 Roadmap
-
-✅ MVP (current)
-
-Manual sprint data input
+✅ MVP (Current)
+Manual or automatic sprint data fetch
 
 AI-based risk & complexity analysis
+
+Console summary table
 
 Auto-save results per run
 
 🚧 Coming Next
-
-Direct JIRA API integration (/rest/api/3/search)
+Multi-agent setup (fetcher → analyzer → reporter)
 
 Sprint trend comparison dashboard
 
-Export to CSV / Markdown reports
+Export to CSV, Markdown, or PDF reports
 
+Integration with Slack / MS Teams notifications
 
 🧑‍💻 Author
-
 Muhammad Maaz
 Backend Engineer & AI Enthusiast
 📧 maazafzal92@gmail.com
-🌐 github [mohammadmaaz](https://github.com/mohammadmaaz)
-
+🌐 GitHub
 
 📜 License
-
-This project is licensed under the MIT License — feel free to modify and extend.
+MIT License — free to modify and extend
