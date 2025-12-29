@@ -15,30 +15,23 @@ Ideal for sprint planning, backlog grooming, or retrospectives.
 
 ## 🗂 Project Structure
 
-sprint-analyzer/
-│
-├── agent.py # Orchestrator: runs the agent loop
-├── fetcher.py # JIRA fetcher and API integration
-├── memory.py # Memory, ticket scoring, risk calculation
-├── thinker.py # AI reasoning via Groq LLM
-├── actor.py # Console display & result saving
-├── utils.py # Helper functions (score mapping, formatting)
-├── requirements.txt # Python dependencies
-├── .env # Stores GROQ API key & JIRA credentials
-├── README.md
-└── model/
-└── data/ # AI-generated analysis results (auto-created per run)
+- `sprint-analyzer/`
+  - `agent.py` – Orchestrator, runs the agent loop
+  - `fetcher.py` – Fetches JIRA tickets and handles API integration
+  - `memory.py` – Calculates risk, maps scores, stores memory
+  - `thinker.py` – Sends data to Groq LLM (Llama 3.1) and returns insights
+  - `actor.py` – Displays rich console tables and saves analysis results
+  - `utils.py` – Helper functions (score mapping, formatting, conversions)
+  - `requirements.txt` – Python dependencies
+  - `.env` – Stores API keys (Groq, JIRA)
+  - `README.md` – Project documentation
+  - `model/`
+    - `data/` – Auto-created per run for AI analysis results
 
-vbnet
-Copy code
+- Each run generates a **date-based folder** with a random ID to save results:
 
-Each run generates a **date-based folder** with a random ID to save results:
-
-model/data/2025-12-29_ab12c/
-└── sprint_analysis.txt
-
-yaml
-Copy code
+- model/data/2025-12-29_ab12c/
+   - sprint_analysis.txt
 
 ---
 
@@ -51,129 +44,134 @@ Copy code
    python --version
 (Install via Microsoft Store or python.org)
 
-Clone the repository
+2. **Clone the repository**
+   ```bash
+   git clone https://github.com/<your-org>/sprint-analyzer.git
+   cd sprint-analyzer
+   ```
 
-bash
-Copy code
-git clone https://github.com/<your-org>/sprint-analyzer.git
-cd sprint-analyzer
-Install dependencies
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-bash
-Copy code
-pip install -r requirements.txt
-Configure environment
+4. **Configure environment**
+   ```bash
+   cp .env.example .env
+   ```
+   Set your:
+   - GROQ_API_KEY
+   - JIRA_URL, JIRA_EMAIL, JIRA_API_TOKEN (optional if using   JIRA integration)
 
-bash
-Copy code
-cp .env.example .env
-Set your:
+5. **Run the analyzer**
+   ```bash
+   python agent.py
+   ```
+## Requirements
+   - Python 3.10+
 
-GROQ_API_KEY
+   - Internet connection
 
-JIRA_URL, JIRA_EMAIL, JIRA_API_TOKEN (optional if using JIRA integration)
+   - Groq API key (free tier available)
 
-Run the analyzer
+   - Optional: JIRA access for automatic sprint fetch
 
-bash
-Copy code
-python agent.py
-🧩 Requirements
-Python 3.10+
+## What It Does
+1. ### Fetch Tickets
 
-Internet connection
+   - Manual input or via JIRA API
 
-Groq API key (free tier available)
+   - Supports current sprint, assignee, and status filters
 
-Optional: JIRA access for automatic sprint fetch
+2. ### Memory & Risk Scoring
 
-🧠 What It Does
-Fetch Tickets
+   - Calculates risk based on:
 
-Manual input or via JIRA API
+      - Description length
 
-Supports current sprint, assignee, and status filters
+      - Linked issues
 
-Memory & Risk Scoring
+      - Keywords (refactor, migrate)
 
-Calculates risk based on:
+   - Maps numeric scores to human-readable text (Impact, Severity, Dev Lift)
 
-Description length
+3. ### Think (AI Reasoning)
 
-Linked issues
+- Sends ticket data + metrics to Groq LLM (Llama 3.1)
 
-Keywords (refactor, migrate)
+- Generates:
 
-Maps numeric scores to human-readable text (Impact, Severity, Dev Lift)
+- Risk Analysis
 
-Think (AI Reasoning)
+- Dependency Detection
 
-Sends ticket data + metrics to Groq LLM (Llama 3.1)
+- Effort Breakdown
 
-Generates:
+- Priority Reordering
 
-Risk Analysis
+- 10-Day Execution Plan
 
-Dependency Detection
+- Quick Wins
 
-Effort Breakdown
+- Sprint Health Summary
 
-Priority Reordering
+4. ### Act (Output)
 
-10-Day Execution Plan
+   - Displays a rich console table with all tickets
 
-Quick Wins
+   - Saves AI analysis + raw data to model/data/<date_random>/sprint_analysis.txt
 
-Sprint Health Summary
+## Example Console Output
 
-Act (Output)
+| Key  |  Summary | Points | Type | Risk |
+|------|----------|--------|------|------|
+|SK12-145 | Refactor user service auth layer | 8 | Story | ⚠️⚠️ |
+| SK12-148 | Fix dashboard widget error | 3 | Bug | ✅ |
 
-Displays a rich console table with all tickets
 
-Saves AI analysis + raw data to model/data/<date_random>/sprint_analysis.txt
+---
 
-🖥️ Example Console Output
-pgsql
-Copy code
-┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┓
-┃ Key           ┃ Summary                              ┃ Points ┃ Type   ┃ Risk    ┃
-┣━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━╋━━━━━━━━╋━━━━━━━━━┫
-┃ SK12-145      ┃ Refactor user service auth layer     ┃ 8      ┃ Story  ┃ ⚠️⚠️     ┃
-┃ SK12-148      ┃ Fix dashboard widget error           ┃ 3      ┃ Bug    ┃ ✅      ┃
-┗━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━┻━━━━━━━━┻━━━━━━━━━┛
-🧰 Tech Stack
-Python 3.13+
+## Tech Stack
+   - Python 3.13+
 
-Groq API (Llama 3.1)
+   - Groq API (Llama 3.1)
 
-Rich for terminal formatting
+   - Rich for terminal formatting
 
-JIRA Python API (optional for live sprint data)
+   - JIRA Python API (optional for live sprint data)
 
-🧭 Roadmap
-✅ MVP (Current)
-Manual or automatic sprint data fetch
+---
 
-AI-based risk & complexity analysis
+## Roadmap
 
-Console summary table
+### MVP (Current)
+- Manual or automatic sprint data fetch
 
-Auto-save results per run
+- AI-based risk & complexity analysis
 
-🚧 Coming Next
-Multi-agent setup (fetcher → analyzer → reporter)
+- Console summary table
 
-Sprint trend comparison dashboard
+- Auto-save results per run
 
-Export to CSV, Markdown, or PDF reports
+### Coming Next
+- Multi-agent setup (fetcher → analyzer → reporter)
 
-Integration with Slack / MS Teams notifications
+- Sprint trend comparison dashboard
 
-🧑‍💻 Author
-Muhammad Maaz
-Backend Engineer & AI Enthusiast
-📧 maazafzal92@gmail.com
-🌐 GitHub
+- Export to CSV, Markdown, or PDF reports
 
-📜 License
-MIT License — free to modify and extend
+- Integration with Slack / MS Teams notifications
+
+---
+
+## 🧑‍💻 Author
+
+**Muhammad Maaz**  
+Backend Engineer & AI Enthusiast  
+📧 [maazafzal92@gmail.com](mailto:maazafzal92@gmail.com)  
+
+🌐 GitHub: [https://github.com/muhammadmaaz](https://github.com/muhammadmaaz)
+
+## 📜 License
+
+This project is licensed under the **MIT License** — free to use, modify, and extend.
